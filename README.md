@@ -94,7 +94,21 @@ cargo uninstall aml-cli
 
 Any plain text outside of tags is rendered as-is.
 
-Supported escape sequences: `\<, \\, \n, \t, \r, \0`.
+Supported escape sequences: `\<, \\, \n, \t, \r, \0, \e, \x`.
+
+| Name | Sequence | Symbol |
+| --- | --- | --- |
+| Left Angular Bracket | `\<` | `<` |
+| Backslash | `\\` | `\` |
+| Newline | `\n` | `LF` |
+| Tab | `\t` | `Tab` |
+| Carriage Return | `\r` | `CR` |
+| Null Character | `\0` | `NUL` |
+| Escape | `\e` | `ESC` |
+| Control Sequence Introduce | `\c` | `\e[` |
+| CSI Reset | `\x` | `\e[0m` |
+
+Note: Multicharcter escape sequences are handled differently.
 
 ---
 

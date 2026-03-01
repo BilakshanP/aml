@@ -140,28 +140,34 @@ fn byte<'src>() -> impl Parser<'src, &'src str, u8, Err<'src>> + Clone {
         .labelled("byte (0–255)")
 }
 
-/// An escape sequence, `\<`, `\\`, `\n`, etc.
-fn escape<'src>() -> impl Parser<'src, &'src str, char, Err<'src>> + Clone {
+/// An escape sequence, `\<`, `\\`, `\n`, `\c`, `\x`, etc.
+fn escape<'src>() -> impl Parser<'src, &'src str, String, Err<'src>> + Clone {
     just('\\')
         .ignore_then(choice((
-            just('<').to('<'),
-            just('\\').to('\\'),
-            just('n').to('\n'),
-            just('t').to('\t'),
-            just('r').to('\r'),
-            just('0').to('\0'),
+            just('<').to("<".to_string()),
+            just('\\').to("\\".to_string()),
+            just('n').to("\n".to_string()),
+            just('t').to("\t".to_string()),
+            just('r').to("\r".to_string()),
+            just('0').to("\0".to_string()),
+            just('e').to("\x1b".to_string()),
+            just('c').to("\x1b[".to_string()),
+            just('x').to("\x1b[0m".to_string()),
         )))
         .labelled("escape sequence")
 }
 
 /// Plain text; `\<` is an escape for a literal `<`.
 fn text_node<'src>() -> impl Parser<'src, &'src str, Node, Err<'src>> + Clone {
-    choice((escape(), any().filter(|c: &char| *c != '<')))
-        .repeated()
-        .at_least(1)
-        .collect()
-        .map(Node::Text)
-        .labelled("text")
+    choice((
+        escape(),
+        any().filter(|c: &char| *c != '<').map(|c| c.to_string()),
+    ))
+    .repeated()
+    .at_least(1)
+    .collect::<Vec<String>>()
+    .map(|parts| Node::Text(parts.concat()))
+    .labelled("text")
 }
 
 // ── Colour parsers ────────────────────────────────────────────────────────────
