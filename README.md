@@ -2,8 +2,6 @@
 
 This library parses a lightweight tag-based markup language for applying ANSI terminal styles to text.
 
----
-
 This workspace has two components:
 - AML (Library): Contains the core logic of parsing and rendering.
 - AML Cli (Binary): A simple cli which exposes the core functionality of the library.
@@ -65,9 +63,6 @@ Error: found 'q' expected HEX colour, RGB colour, ANSI colour, or Fixed
 ───╯
 ```
 
-
----
-
 ### Installation
 
 ```sh
@@ -87,8 +82,6 @@ cargo uninstall aml-cli
 ---
 
 ## Markup Syntax Specification
-
----
 
 ### Text
 
@@ -110,13 +103,9 @@ Supported escape sequences: `\<, \\, \n, \t, \r, \0, \e, \x`.
 
 Note: Multicharacter escape sequences are handled differently.
 
----
-
 ### Tags
 
 All tags follow the form `<tag …>content</tag>`. Tags can be nested arbitrarily.
-
----
 
 1. Reset — `<>…</>`
 
@@ -173,12 +162,10 @@ Emits raw SGR code bytes verbatim. The codes are written as a string between `!`
 <!1;31m>bold red via raw codes</!>
 ```
 
----
-
 ### Colour Formats
 
 | Format | Syntax | Example | Notes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | ANSI standard | single letter | `r` `g` `b` `c` `m` `y` `w` `k` | lowercase = normal |
 | ANSI bright | uppercase letter | `R` `G` `B` `C` `M` `Y` `W` `K` | uppercase = bright |
 | Hex | `#` + 1/2/3/6 hex digits | `#f00`, `#ff0000`, `#abc` | short forms are expanded |
@@ -186,8 +173,6 @@ Emits raw SGR code bytes verbatim. The codes are written as a string between `!`
 | 256-palette | integer | `198` | 0–255 index |
 
 Short hex forms expand as follows: `#f` → `#ffffff`, `#de` → `#dedede` (repeated), `#abc` → `#abcabc`.
-
----
 
 ### Modifier Letters
 
@@ -206,8 +191,6 @@ Short hex forms expand as follows: `#f` → `#ffffff`, `#de` → `#dedede` (repe
 | `o` | Overline |
 
 Multiple modifier letters are written together with no separator: `bus` = bold + underline + strike.
-
----
 
 ### Nesting
 
