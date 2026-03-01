@@ -144,16 +144,17 @@ fn byte<'src>() -> impl Parser<'src, &'src str, u8, Err<'src>> + Clone {
 fn escape<'src>() -> impl Parser<'src, &'src str, String, Err<'src>> + Clone {
     just('\\')
         .ignore_then(choice((
-            just('<').to("<".to_string()),
-            just('\\').to("\\".to_string()),
-            just('n').to("\n".to_string()),
-            just('t').to("\t".to_string()),
-            just('r').to("\r".to_string()),
-            just('0').to("\0".to_string()),
-            just('e').to("\x1b".to_string()),
-            just('c').to("\x1b[".to_string()),
-            just('x').to("\x1b[0m".to_string()),
+            just('<').to("<"),
+            just('\\').to("\\"),
+            just('n').to("\n"),
+            just('t').to("\t"),
+            just('r').to("\r"),
+            just('0').to("\0"),
+            just('e').to("\x1b"),
+            just('c').to("\x1b["),
+            just('x').to("\x1b[0m"),
         )))
+        .map(str::to_string)
         .labelled("escape sequence")
 }
 
