@@ -92,7 +92,9 @@ cargo uninstall aml-cli
 
 ### Text
 
-Any plain text outside of tags is rendered as-is. To include a literal `<`, escape it as `\<`.
+Any plain text outside of tags is rendered as-is.
+
+Supported escape sequences: `\<, \\, \n, \t, \r, \0`.
 
 ---
 
