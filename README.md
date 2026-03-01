@@ -201,5 +201,5 @@ Tags nest naturally. Inner styles layer on top of outer ones; a `<>…</>` reset
 
 ```
 <fr>red <mbi>bold italic red</m> back to red</f>
-<fr>red <><>reset inside</></> still red</f>
+<fr>red <>reset inside</> still red</f>
 ```
