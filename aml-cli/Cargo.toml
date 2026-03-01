@@ -1,0 +1,17 @@
+[package]
+name = "aml-cli"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "aml"
+path = "src/main.rs"
+
+[dependencies]
+aml.workspace = true
+ariadne = "0.6.0"
+chumsky = "0.12.0"
+clap = { version = "4", features = ["derive"] }

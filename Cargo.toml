@@ -1,0 +1,14 @@
+[workspace]
+resolver = "2"
+members  = ["aml", "aml-cli"]
+
+[workspace.package]
+version    = "0.1.0"
+authors    = ["Bilakshan Purohit (@bilakshanp)"]
+edition    = "2024"
+license    = "MIT"
+repository = "https://github.com/bilakshanp/aml"
+
+
+[workspace.dependencies]
+aml = { path = "aml", version = "0.1.0" }

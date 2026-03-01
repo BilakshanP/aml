@@ -1,0 +1,48 @@
+<s fR mbi> BRIGHT RED BOLD ITALIC </s>
+<s fG mu> green underline </s>
+<s fB mb> blue bold </s>
+<s fC mi> cyan italic </s>
+<s fM ms> magenta strikethrough </s>
+<s fY mo> yellow overline </s>
+
+<s fR bK mbi> bright red on black, bold italic </s>
+<s fW bB mu> white on bright blue, underline </s>
+<s fG bM ms> green on magenta, strike </s>
+<s fY bC mbi> yellow on cyan, bold italic </s>
+<s fK bW mb> black on white, bold </s>
+
+<s f#ff6f00> hex orange </s>
+<s f#00ffcc> hex mint </s>
+<s f#ff00ff mbi> hex magenta bold italic </s>
+<s f#ffff00 b#0000ff> yellow on deep blue (hex bg) </s>
+<s f#00ff00 b#330033 ms> green on dark purple, strike </s>
+
+<s f255,100,0> rgb orange </s>
+<s f100,200,255> rgb sky blue </s>
+<s f255,0,128 mbi> rgb hot pink bold italic </s>
+<s f0,255,180 b200,0,100 mu> rgb teal on rgb crimson, underline </s>
+<s f255,255,255 b0,0,0 mbi> white on black, bold italic </s>
+
+<s f198> indexed pink </s>
+<s f82 mb> indexed lime bold </s>
+<s f226 mi> indexed yellow italic </s>
+<s f21 bW ms> indexed blue on bright white, strike </s>
+<s f196 b232 mbi> indexed red on near-black, bold italic </s>
+
+ normal then <s fR> bright red </s> then normal again
+<s fG> green outer <s fB mb> blue bold inner </s> back to green </s>
+<s mbi> bold italic outer <s fY> yellow bold italic inner </s> still bold italic </s>
+<s f#ff6f00 mbi> orange bold italic <s bK> now with black bg </s> no bg again </s>
+<s fR mb> bold red start <s fG> green takes over </s> red bold again </s>
+
+ now <> reset zone — no styles here </> back to whatever was above
+<s fR mbi> styled <> HARD RESET INSIDE </> back to styled </s>
+<s f#00ffcc b#330033> teal on purple <> reset mid-nest </> resumed teal on purple </s>
+
+<s fG mb> I am <s mi> not </s> a <s mu> robot </s> </s>
+<s f#ff6f00 mbi> The quick </s> <s f#00ffcc mu> brown fox </s> <s fM ms> jumps over </s> <s fY mb> the lazy </s> <s fR mo> dog </s>
+<s f198 mbi> p </s><s f199 mbi> i </s><s f200 mbi> n </s><s f201 mbi> k </s><s f202 mbi> ! </s>
+<s fR> A </s><s fY> N </s><s fG> S </s><s fC> I </s><s fB> ! </s>
+<s f255,80,80 mb> ERROR: </s> <s f255,200,0 mi> something went wrong on line 42 </s>
+<s f80,255,80 mb> SUCCESS: </s> <s f200,255,200> all tests passed </s>
+<s f100,100,255 mu> INFO: </s> <s f180,180,255> process running </s>
