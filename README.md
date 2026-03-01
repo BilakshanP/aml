@@ -98,7 +98,7 @@ Supported escape sequences: `\<, \\, \n, \t, \r, \0, \e, \x`.
 | Carriage Return | `\r` | `CR` |
 | Null Character | `\0` | `NUL` |
 | Escape | `\e` | `ESC` |
-| Control Sequence Introduce | `\c` | `\e[` |
+| Control Sequence Introducer | `\c` | `\e[` |
 | CSI Reset | `\x` | `\e[0m` |
 
 Note: Multicharacter escape sequences are handled differently.
