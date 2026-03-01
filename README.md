@@ -89,7 +89,7 @@ Any plain text outside of tags is rendered as-is.
 
 Supported escape sequences: `\<, \\, \n, \t, \r, \0, \e, \x`.
 
-| Name | Sequence | Symbol |
+| Name | Escape | Sequence |
 | --- | --- | --- |
 | Left Angular Bracket | `\<` | `<` |
 | Backslash | `\\` | `\` |
