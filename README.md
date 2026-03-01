@@ -75,7 +75,7 @@ cargo install --path aml-cli
 
 # or
 
-cargo install --git https://github.com/bilakshanp/aml --package aml-cli
+cargo install --git https://github.com/bilakshanp/aml
 ```
 
 ---
