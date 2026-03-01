@@ -140,9 +140,23 @@ fn byte<'src>() -> impl Parser<'src, &'src str, u8, Err<'src>> + Clone {
         .labelled("byte (0–255)")
 }
 
+/// An escape sequence, `\<`, `\\`, `\n`, etc.
+fn escape<'src>() -> impl Parser<'src, &'src str, char, Err<'src>> + Clone {
+    just('\\')
+        .ignore_then(choice((
+            just('<').to('<'),
+            just('\\').to('\\'),
+            just('n').to('\n'),
+            just('t').to('\t'),
+            just('r').to('\r'),
+            just('0').to('\0'),
+        )))
+        .labelled("escape sequence")
+}
+
 /// Plain text; `\<` is an escape for a literal `<`.
 fn text_node<'src>() -> impl Parser<'src, &'src str, Node, Err<'src>> + Clone {
-    choice((just("\\<").to('<'), any().filter(|c: &char| *c != '<')))
+    choice((escape(), any().filter(|c: &char| *c != '<')))
         .repeated()
         .at_least(1)
         .collect()
