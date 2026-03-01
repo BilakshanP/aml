@@ -108,7 +108,7 @@ Supported escape sequences: `\<, \\, \n, \t, \r, \0, \e, \x`.
 | Control Sequence Introduce | `\c` | `\e[` |
 | CSI Reset | `\x` | `\e[0m` |
 
-Note: Multicharcter escape sequences are handled differently.
+Note: Multicharacter escape sequences are handled differently.
 
 ---
 
