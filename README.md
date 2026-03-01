@@ -71,11 +71,17 @@ Error: found 'q' expected HEX colour, RGB colour, ANSI colour, or Fixed
 ### Installation
 
 ```sh
-cargo install --path aml-cli
+cargo install --path aml-cli # executable `aml`
 
 # or
 
 cargo install --git https://github.com/bilakshanp/aml
+```
+
+To uninstall execute:
+
+```sh
+cargo uninstall aml-cli
 ```
 
 ---
