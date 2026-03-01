@@ -11,3 +11,7 @@ chumsky = "0.12.0"
 
 [features]
 styler = []
+
+[[example]]
+name = "styler"
+required-features = ["styler"]
