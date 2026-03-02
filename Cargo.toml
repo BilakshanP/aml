@@ -12,3 +12,10 @@ repository = "https://github.com/bilakshanp/aml"
 
 [workspace.dependencies]
 aml = { path = "aml", version = "0.1.0" }
+
+[profile.release]
+lto = "fat"
+strip = true
+opt-level = 3
+panic = "abort"
+codegen-units = 1
