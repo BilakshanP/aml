@@ -1,3 +1,5 @@
+use std::io::Read;
+
 use clap::{Args, Parser};
 
 /// ANSI Markup Language renderer.
@@ -36,6 +38,10 @@ pub struct Input {
     /// Read AML markup from a file.
     #[arg(short, long, value_name = "FILE")]
     pub file: Option<std::path::PathBuf>,
+
+    /// Read AML markup from stdin.
+    #[arg(short, long)]
+    pub stdin: bool,
 }
 
 impl Input {
@@ -53,6 +59,14 @@ impl Input {
             return Ok(Info::new(name, content));
         }
 
-        unreachable!("clap ensures one of the two is always set")
+        if self.stdin {
+            let mut input = String::new();
+            std::io::stdin()
+                .read_to_string(&mut input)
+                .map_err(|e| format!("reading stdin: {e}"))?;
+            return Ok(Info::new("stdin", input));
+        }
+
+        unreachable!("clap ensures that one of the input options is always set")
     }
 }

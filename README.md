@@ -39,6 +39,9 @@ aml '<f198>Hello</f><f#ff0>,</f> <fB>World</f><mk>!!</m>'
 # read from a `.aml` file
 aml -nf ./hello-world.aml
 
+# read from `stdin` or piped input
+echo 'Hi' | aml -ns
+
 # composition with other commands
 printf '%s' "$(aml -n '<mb>prefix</m>') rest of line"
 
