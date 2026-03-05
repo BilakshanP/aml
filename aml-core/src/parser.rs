@@ -244,10 +244,12 @@ fn expand_hex(s: String) -> Colour {
         _ => unreachable!("hex parser only yields 1/2/3/6 hex digits"),
     };
 
+    let n = u32::from_str_radix(&full, 16).expect("should be a valid hex");
+
     Colour::Rgb {
-        r: u8::from_str_radix(&full[0..2], 16).unwrap(),
-        g: u8::from_str_radix(&full[2..4], 16).unwrap(),
-        b: u8::from_str_radix(&full[4..6], 16).unwrap(),
+        r: (n >> 16) as u8,
+        g: (n >> 8) as u8,
+        b: n as u8,
     }
 }
 
