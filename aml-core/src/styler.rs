@@ -61,3 +61,14 @@ impl std::fmt::Display for CompiledStyle {
         f.write_str(&self.0)
     }
 }
+
+#[cfg(feature = "quote")]
+impl quote::ToTokens for CompiledStyle {
+    fn to_tokens(&self, tokens: &mut ::proc_macro2::TokenStream) {
+        let inner = &self.0;
+
+        tokens.extend(quote::quote! {
+            ::aml::styler::CompiledStyle(#inner.to_owned())
+        });
+    }
+}

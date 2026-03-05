@@ -8,10 +8,10 @@ repository.workspace = true
 
 [dependencies]
 aml-core = { workspace = true }
+aml-macros = { workspace = true , optional = true }
 
 [features]
 styler = ["aml-core/styler"]
 diagnostics = ["aml-core/diagnostics"]
-
-[dev-dependencies]
-aml-core = { workspace = true, features = ["styler"] }
+quote = ["aml-core/quote"]
+macros = ["dep:aml-macros", "styler"]

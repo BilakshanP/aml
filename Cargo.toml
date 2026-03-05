@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members  = ["aml-core", "aml-cli", "aml"]
+members  = ["aml-core", "aml-cli", "aml", "aml-macros"]
 
 [workspace.package]
 version    = "0.1.0"
@@ -13,6 +13,7 @@ repository = "https://github.com/bilakshanp/aml"
 [workspace.dependencies]
 aml = { path = "aml", version = "0.1.0" }
 aml-core = { path = "aml-core", version = "0.1.0" }
+aml-macros = { path = "aml-macros", version = "0.1.0" }
 
 [profile.release]
 lto = "fat"
