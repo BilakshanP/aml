@@ -6,7 +6,7 @@ fn main() {
 
     println!(
         "{}",
-        c.style(" Using a pre-computed style. Use me if the style will be used often. ")
+        c.paint(" Using a pre-computed style. Use me if the style will be used often. ")
     );
 
     println!(

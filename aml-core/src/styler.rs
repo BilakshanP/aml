@@ -5,6 +5,7 @@ use crate::{
     render::{RESET, wrap},
 };
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Style {
     fg: Option<Colour>,
     bg: Option<Colour>,
@@ -32,7 +33,7 @@ impl Style {
             parts.extend(bg.bg_codes());
         }
 
-        if let Some(Modifiers(ms)) = self.mdf.clone() {
+        if let Some(Modifiers(ms)) = &self.mdf {
             let mut mods = ms.iter().map(|m| *m as u8).collect::<Vec<_>>();
             mods.sort();
             parts.extend(mods);
@@ -42,14 +43,21 @@ impl Style {
     }
 
     pub fn apply<'src>(spec: &'src str, text: &'src str) -> Result<String, Vec<Rich<'src, char>>> {
-        Ok(Style::new(spec)?.compile().style(text))
+        Ok(Style::new(spec)?.compile().paint(text))
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompiledStyle(pub String);
 
 impl CompiledStyle {
-    pub fn style(&self, text: &str) -> String {
+    pub fn paint(&self, text: &str) -> String {
         format!("{}{text}{RESET}", self.0)
+    }
+}
+
+impl std::fmt::Display for CompiledStyle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
     }
 }
