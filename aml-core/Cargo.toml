@@ -1,5 +1,5 @@
 [package]
-name = "aml"
+name = "aml-core"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -7,10 +7,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-aml-core = { workspace = true }
+chumsky = "0.12.0"
 
 [features]
-styler = ["aml-core/styler"]
-
-[dev-dependencies]
-aml-core = { workspace = true, features = ["styler"] }
+styler = []

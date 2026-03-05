@@ -21,7 +21,7 @@ checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 name = "aml"
 version = "0.1.0"
 dependencies = [
- "chumsky",
+ "aml-core",
 ]
 
 [[package]]
@@ -32,6 +32,13 @@ dependencies = [
  "ariadne",
  "chumsky",
  "clap",
+]
+
+[[package]]
+name = "aml-core"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
 ]
 
 [[package]]
