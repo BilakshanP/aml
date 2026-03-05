@@ -11,6 +11,7 @@ aml-core = { workspace = true }
 
 [features]
 styler = ["aml-core/styler"]
+diagnostics = ["aml-core/diagnostics"]
 
 [dev-dependencies]
 aml-core = { workspace = true, features = ["styler"] }

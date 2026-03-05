@@ -29,7 +29,6 @@ name = "aml-cli"
 version = "0.1.0"
 dependencies = [
  "aml",
- "ariadne",
  "chumsky",
  "clap",
 ]
@@ -38,6 +37,7 @@ dependencies = [
 name = "aml-core"
 version = "0.1.0"
 dependencies = [
+ "ariadne",
  "chumsky",
 ]
 

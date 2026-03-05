@@ -1,5 +1,4 @@
 mod cli;
-mod reporting;
 
 use std::process::ExitCode;
 
@@ -8,7 +7,6 @@ use clap::Parser;
 use aml::prelude::*;
 
 use cli::{Cli, Info};
-use reporting::report_errors;
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
@@ -38,7 +36,7 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Err(errs) => {
-            report_errors(&input, name, errs);
+            report(&input, name, errs, &mut std::io::stdout()).expect("print to stdout");
             ExitCode::FAILURE
         }
     }
