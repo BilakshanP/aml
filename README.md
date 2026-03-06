@@ -203,3 +203,14 @@ Tags nest naturally. Inner styles layer on top of outer ones; a `<>…</>` reset
 <fr>red <mbi>bold italic red</m> back to red</f>
 <fr>red <>reset inside</> still red</f>
 ```
+
+## Resources & References
+
+- **VT100**: https://vt100.net/emu/
+- **VT220**: https://vt100.net/docs/vt220-rm/
+- **Wikipedia ANSI Escape Codes**: https://en.wikipedia.org/wiki/ANSI_escape_code
+- **Kitty Protocol Extensions**: https://sw.kovidgoyal.net/kitty/protocol-extensions/
+- **XTerm Control Sequences** (Thomas Dickey): https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+- **ECMA-48 Standard**: https://ecma-international.org/publications-and-standards/standards/ecma-48/
+- **WezTerm Escape Sequences**: https://wezterm.org/escape-sequences.html#operating-system-command-sequences
+- **ISO/IEC 8613-6 (1994)**: https://cdn.standards.iteh.ai/samples/22943/27430574bc77421e9904253bb0dd6339/ISO-IEC-8613-6-1994.pdf
