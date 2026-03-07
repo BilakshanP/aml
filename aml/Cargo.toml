@@ -15,3 +15,11 @@ diagnostics = ["aml-core/diagnostics"]
 macros = ["dep:aml-macros", "styler"]
 quote = ["aml-core/quote"]
 styler = ["aml-core/styler"]
+
+[[example]]
+name = "styler"
+required-features = ["styler"]
+
+[[example]]
+name = "macro"
+required-features = ["macros"]
