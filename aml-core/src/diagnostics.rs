@@ -10,6 +10,7 @@ pub fn report<W: Write>(
 ) -> std::io::Result<()> {
     for err in errs {
         let span = err.span().into_range();
+
         Report::build(ReportKind::Error, (file, span.clone()))
             .with_message(err.reason().to_string())
             .with_label(

@@ -178,6 +178,7 @@ fn render_nodes(nodes: &[Node], stack: &mut StyleStack, out: &mut String, curren
                 if is_reset {
                     // Restore parent context after `</>`.
                     let desired = stack.resolve();
+
                     if let Some(seq) = transition(current, &desired) {
                         out.push_str(&seq);
                         *current = desired;
@@ -189,6 +190,7 @@ fn render_nodes(nodes: &[Node], stack: &mut StyleStack, out: &mut String, curren
                     out.push_str(RESET);
                     *current = TermState::default();
                     let desired = stack.resolve();
+
                     if let Some(seq) = transition(current, &desired) {
                         out.push_str(&seq);
                         *current = desired;

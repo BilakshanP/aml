@@ -180,10 +180,12 @@ fn nested_identical_fg_tags_no_redundant_sequences() {
     //   {fg:red,bg:yellow} → {fg:red}   = ESC[0;31m]   ← bg removed
     //   {fg:red} → {}                    = ESC[0m]
     let out = rendered("<fr><fr>X<by> Hi </b>X</f></f>");
+
     assert_eq!(
         out,
         format!("{}X{} Hi {}X{RESET}", csi("31"), csi("31;43"), csi("0;31"))
     );
+
     // ESC[31m appears exactly once — identical inner fg is a no-op
     assert_eq!(
         out.matches(&csi("31")).count(),
@@ -195,6 +197,7 @@ fn nested_identical_fg_tags_no_redundant_sequences() {
 #[test]
 fn no_duplicate_csi_on_tag_close_when_parent_same_style() {
     let out = rendered("<fr><fr>text</f>more</f>");
+
     assert_eq!(
         out.matches(&csi("31")).count(),
         1,
@@ -208,6 +211,7 @@ fn no_duplicate_csi_on_tag_close_when_parent_same_style() {
 fn reset_tag_always_emits_reset_at_entry_even_with_no_outer_style() {
     // Explicit user reset — must emit RESET regardless of tracked state.
     let out = rendered("<>hello</>");
+
     assert_eq!(out, format!("{RESET}hello"));
 }
 
@@ -225,6 +229,7 @@ fn reset_tag_inside_styled_context() {
     //   {fg:red,bg:blue} → {fg:red}        = ESC[0;31m]    ← bg removed
     //   {fg:red} → {}                       = ESC[0m]
     let out = rendered("<fr> red <bb> red blue <> normal </> red blue </b> red </f>");
+
     assert_eq!(
         out,
         format!(
@@ -242,6 +247,7 @@ fn reset_tag_restores_full_context_on_close() {
     // After </> the full parent style must be re-emitted before "after".
     let out = rendered("<fr><bb>before<>mid</>after</b></f>");
     let after_idx = out.find("after").expect("'after' not in output");
+
     assert!(
         out[..after_idx].ends_with(&csi("31;44")),
         "expected ESC[31;44m before 'after': {out:?}"
@@ -253,12 +259,14 @@ fn reset_tag_restores_full_context_on_close() {
 #[test]
 fn shorthand_fg_and_modifier() {
     let out = rendered("<s fr mbi>text</s>");
+
     assert_eq!(out, format!("{}text{RESET}", csi("31;1;3")));
 }
 
 #[test]
 fn shorthand_fg_bg_mdf() {
     let out = rendered("<s fr bb mbi>text</s>");
+
     assert_eq!(out, format!("{}text{RESET}", csi("31;44;1;3")));
 }
 
@@ -272,16 +280,19 @@ fn shorthand_nested_inside_fg_uses_minimal_transitions() {
     //   {fg:red,bg:blue,bold,italic} → {fg:red}     = ESC[0;31m]       ← bg+mods removed
     //   {fg:red} → {}                                = ESC[0m]
     let out = rendered("<fr>a<s bb mbi>b</s>c</f>");
+
     let a_idx = out.find('a').unwrap();
     assert!(
         out[..a_idx].ends_with(&csi("31")),
         "expected ESC[31m before 'a': {out:?}"
     );
+
     let b_idx = out.find('b').unwrap();
     assert!(
         out[..b_idx].ends_with(&csi("31;44;1;3")),
         "expected ESC[31;44;1;3m before 'b': {out:?}"
     );
+
     let c_idx = out.find('c').unwrap();
     assert!(
         out[..c_idx].ends_with(&csi("0;31")),
@@ -302,9 +313,11 @@ fn standalone_reset_never_appears_mid_sequence_outside_reset_tag() {
         "<fr><fr> A <mb><mo> B </m></m> C </f></f>",
         "<fr>a<s bb mbi>b</s>c</f>",
     ];
+
     for input in inputs {
         let out = rendered(input);
         let last_reset = out.rfind(RESET).expect("should end with RESET");
+
         assert!(
             !out[..last_reset].contains(RESET),
             "standalone RESET found mid-sequence in {input:?}: {out:?}"
@@ -318,12 +331,14 @@ fn standalone_reset_never_appears_mid_sequence_outside_reset_tag() {
 fn raw_tag_emits_codes_verbatim() {
     // <! 53> — raw overline (code 53), which the type system doesn't model
     let out = rendered("<!53m>overlined</!>");
+
     assert_eq!(out, format!("{}overlined{RESET}", csi("53")));
 }
 
 #[test]
 fn raw_tag_multiple_codes() {
     let out = rendered("<!1;3;53;a;bcm>text</!>");
+
     assert_eq!(out, format!("{}text{RESET}", csi("1;3;53;a;bc")));
 }
 
@@ -331,6 +346,7 @@ fn raw_tag_multiple_codes() {
 fn raw_tag_always_resets_on_close() {
     // Even with no outer style, </!> must emit a bare RESET.
     let out = rendered("<! 53>text</!>");
+
     assert!(out.ends_with(RESET), "expected trailing RESET: {out:?}");
 }
 
@@ -346,6 +362,7 @@ fn raw_tag_restores_parent_context_on_close() {
     //   {} → {fg:red}      = ESC[31m]   ← parent context restored
     //   {fg:red} → {}       = ESC[0m]
     let out = rendered("<fr> red <!53m> overlined red </!> red </f>");
+
     assert_eq!(
         out,
         format!(
@@ -363,6 +380,7 @@ fn raw_tag_is_transparent_to_outer_style_resolution() {
     // Text after </!> should see exactly the same state as before <!>.
     let out = rendered("<fr><! 53>x</!>y</f>");
     let y_idx = out.find('y').unwrap();
+
     // After raw close: RESET then ESC[31m re-applied; 'y' must follow ESC[31m].
     assert!(
         out[..y_idx].ends_with(&csi("31")),
@@ -374,6 +392,7 @@ fn raw_tag_is_transparent_to_outer_style_resolution() {
 fn raw_tag_nested_inside_reset_tag() {
     // <> <! 53>text</!> </> — raw inside an explicit reset context
     let out = rendered("<><!53m>text</!></>");
+
     assert!(out.contains(&csi("53")), "raw code missing: {out:?}");
 }
 
@@ -383,6 +402,7 @@ fn outer_style_does_not_bleed_into_post_raw_close() {
     // exactly one ESC[31m before content following the raw span.
     let out = rendered("<fr>a<! 53>b</!>c</f>");
     let c_idx = out.find('c').unwrap();
+
     assert!(
         out[..c_idx].ends_with(&csi("31")),
         "expected ESC[31m directly before 'c': {out:?}"
