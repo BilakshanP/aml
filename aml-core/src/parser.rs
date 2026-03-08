@@ -8,14 +8,9 @@ const BACKGROUND_OFFSET: u8 = 10;
 
 type Err<'src> = extra::Err<Rich<'src, char>>;
 
-// ── Colour ────────────────────────────────────────────────────────────────────
+// Colour
 
-#[repr(u8)]
-enum Variant {
-    Fg = 0,
-    Bg = BACKGROUND_OFFSET,
-}
-
+/// An ANSI color from the standard palette.
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Clr {
@@ -29,13 +24,20 @@ pub enum Clr {
     White = 37,
 }
 
+#[repr(u8)]
+enum Variant {
+    Fg = 0,
+    Bg = BACKGROUND_OFFSET,
+}
+
+/// A color specification supporting ANSI 8/16, 256-color, and RGB modes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Colour {
-    /// Standard 8/16-colour ANSI palette.
+    /// Standard 8/16-color ANSI palette.
     Ansi { clr: Clr, bright: bool },
-    /// 24-bit true colour.
+    /// 24-bit true color RGB.
     Rgb { r: u8, g: u8, b: u8 },
-    /// 256-colour fixed-palette index.
+    /// 256-color fixed-palette index.
     Fixed(u8),
 }
 
@@ -57,16 +59,20 @@ impl Colour {
         }
     }
 
+    /// Get SGR codes for foreground color.
     pub fn fg_codes(&self) -> Vec<u8> {
         self.codes(Variant::Fg)
     }
+
+    /// Get SGR codes for background color.
     pub fn bg_codes(&self) -> Vec<u8> {
         self.codes(Variant::Bg)
     }
 }
 
-// ── Modifiers ─────────────────────────────────────────────────────────────────
+// Modifiers
 
+/// SGR text modifier/attribute.
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Mdf {
@@ -83,45 +89,61 @@ pub enum Mdf {
     Overline = 53,
 }
 
+/// A set of text modifiers.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Modifiers(pub HashSet<Mdf>);
 
-// ── Tag ───────────────────────────────────────────────────────────────────────
+// Tag
 
 /// A parsed style tag.
+///
+/// Tags can be:
+/// - `<>...</>` - hard SGR reset
+/// - `<f color>...</f>` - foreground color
+/// - `<b color>...</b>` - background color
+/// - `<m modifiers>...</m>` - text modifiers
+/// - `<s ...>...</s>` - shorthand combining multiple styles
+/// - `<! codes>...</!>` - raw SGR codes (transparent to stack)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Tag {
-    /// `<>…</>` — hard SGR reset.
+    /// Hard SGR reset: `<>...</>`
     Reset,
+    /// Foreground color.
     Fg(Colour),
+    /// Background color.
     Bg(Colour),
+    /// Text modifiers.
     Mdf(Modifiers),
-    /// Combined shorthand tag, e.g. `<s fg br mbi>`.
+    /// Combined shorthand: `<s fg br mbi>...</s>`
     Shorthand {
         fg: Option<Colour>,
         bg: Option<Colour>,
         mdf: Option<Modifiers>,
     },
-    /// `<! 0 123 255>…</!>` — raw SGR codes, emitted verbatim.
-    /// Transparent to the style stack; always followed by a reset on close.
+    /// Raw SGR codes: `<! 0 123 255>...</!>`
+    /// Emitted verbatim and transparent to the style stack.
     Raw(String),
 }
 
-// ── AST Node ──────────────────────────────────────────────────────────────────
+// AST Node
 
+/// A parsed document node.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Node {
+    /// A tag with its children.
     Tag { tag: Tag, children: Vec<Node> },
+    /// Plain text content.
     Text(String),
 }
 
 impl Node {
+    /// Convert this node into a document.
     pub fn doc(self) -> Document {
         Document { root: vec![self] }
     }
 }
 
-// ── Parser helpers ────────────────────────────────────────────────────────────
+// Parser helpers
 
 /// One or more ASCII spaces.
 fn wsp<'src>() -> impl Parser<'src, &'src str, (), Err<'src>> + Clone {
@@ -132,15 +154,15 @@ fn wsp<'src>() -> impl Parser<'src, &'src str, (), Err<'src>> + Clone {
         .labelled("whitespace")
 }
 
-/// A decimal integer in `0..=255`.
+/// A decimal integer in 0..=255.
 fn byte<'src>() -> impl Parser<'src, &'src str, u8, Err<'src>> + Clone {
     text::int(10)
         .from_str()
         .unwrapped()
-        .labelled("byte (0–255)")
+        .labelled("byte (0-255)")
 }
 
-/// An escape sequence, `\<`, `\\`, `\n`, `\c`, `\x`, etc.
+/// An escape sequence: \<, \\, \n, \t, \r, \0, \e, \c, \x
 fn escape<'src>() -> impl Parser<'src, &'src str, String, Err<'src>> + Clone {
     just('\\')
         .ignore_then(choice((
@@ -158,7 +180,7 @@ fn escape<'src>() -> impl Parser<'src, &'src str, String, Err<'src>> + Clone {
         .labelled("escape sequence")
 }
 
-/// Plain text; `\<` is an escape for a literal `<`.
+/// Plain text content; use \< to escape a literal <
 fn text_node<'src>() -> impl Parser<'src, &'src str, Node, Err<'src>> + Clone {
     choice((
         escape(),
@@ -171,10 +193,10 @@ fn text_node<'src>() -> impl Parser<'src, &'src str, Node, Err<'src>> + Clone {
     .labelled("text")
 }
 
-// ── Colour parsers ────────────────────────────────────────────────────────────
+// Colour parsers
 
 fn fixed_colour<'src>() -> impl Parser<'src, &'src str, Colour, Err<'src>> + Clone {
-    byte().map(Colour::Fixed).labelled("Fixed colour")
+    byte().map(Colour::Fixed).labelled("fixed color")
 }
 
 fn ansi_clr<'src>(upper: bool) -> impl Parser<'src, &'src str, Clr, Err<'src>> + Clone {
@@ -201,10 +223,10 @@ fn ansi_colour<'src>() -> impl Parser<'src, &'src str, Colour, Err<'src>> + Clon
         ansi_clr(false).map(|clr| Colour::Ansi { clr, bright: false }),
         ansi_clr(true).map(|clr| Colour::Ansi { clr, bright: true }),
     ))
-    .labelled("ANSI colour")
+    .labelled("ANSI color")
 }
 
-/// Decimal `R,G,B` triple, e.g. `0,128,255`.
+/// Decimal R,G,B triple, e.g. 0,128,255
 fn rgb_colour<'src>() -> impl Parser<'src, &'src str, Colour, Err<'src>> + Clone {
     byte()
         .then_ignore(just(','))
@@ -212,16 +234,15 @@ fn rgb_colour<'src>() -> impl Parser<'src, &'src str, Colour, Err<'src>> + Clone
         .then_ignore(just(','))
         .then(byte())
         .map(|((r, g), b)| Colour::Rgb { r, g, b })
-        .labelled("RGB colour")
+        .labelled("RGB color")
 }
 
-/// Hex colour — `#f`, `#ff`, `#abc`, `#aabbcc` (expanded automatically).
+/// Hex color in #f, #ff, #abc, or #aabbcc format (auto-expanded)
 fn hex_colour<'src>() -> impl Parser<'src, &'src str, Colour, Err<'src>> + Clone {
     let hex_digit = any()
         .filter(|c: &char| c.is_ascii_hexdigit())
         .labelled("hex digit (0-9, a-f, A-F)");
 
-    // Longest match first so `#abcdef` isn't parsed as `#abc`.
     let digits = choice((
         hex_digit.repeated().exactly(6).collect(),
         hex_digit.repeated().exactly(3).collect(),
@@ -232,7 +253,7 @@ fn hex_colour<'src>() -> impl Parser<'src, &'src str, Colour, Err<'src>> + Clone
     just('#')
         .ignore_then(digits)
         .map(expand_hex)
-        .labelled("HEX colour")
+        .labelled("HEX color")
 }
 
 fn expand_hex(s: String) -> Colour {
@@ -253,12 +274,12 @@ fn expand_hex(s: String) -> Colour {
     }
 }
 
-/// Any supported colour: hex → rgb → ansi → fixed-palette.
+/// Any supported color: hex, rgb, ansi, or fixed-palette
 fn colour<'src>() -> impl Parser<'src, &'src str, Colour, Err<'src>> + Clone {
     choice((hex_colour(), rgb_colour(), ansi_colour(), fixed_colour()))
 }
 
-// ── Modifier parsers ──────────────────────────────────────────────────────────
+// Modifier parsers
 
 fn modifier<'src>() -> impl Parser<'src, &'src str, Mdf, Err<'src>> + Clone {
     choice((
@@ -280,11 +301,9 @@ fn modifiers<'src>() -> impl Parser<'src, &'src str, Modifiers, Err<'src>> + Clo
     modifier().repeated().at_least(1).collect().map(Modifiers)
 }
 
-// ── Shorthand arg parsers ─────────────────────────────────────────────────────
-//
-// A shorthand tag bundles fg / bg / mdf into one `<s …>` tag:
-//   `<s fg br mbi>…</s>`  — foreground green, background red, bold + italic
+// Shorthand arg parsers
 
+/// Parse a shorthand tag argument (e.g. fg, bg, mdf)
 fn tag_arg<'src, O, P, F>(
     prefix: char,
     inner: P,
@@ -325,13 +344,9 @@ pub(crate) fn shorthand<'src>() -> impl Parser<'src, &'src str, Tag, Err<'src>> 
         .labelled("shorthand")
 }
 
-// ── Node parser ───────────────────────────────────────────────────────────────
+// Node parser
 
-/// Builds a `<name …>…</name>` tag node.
-///
-/// - `attr_parser` — parses the attribute body between the name and `>`.
-/// - `into_tag`    — converts the parsed attribute into a [`Tag`].
-/// - `content`     — parses the child nodes.
+/// Builds a `<name ...>...</name>` tag node.
 fn tag_node<'src, P, A: 'src>(
     name: &'static str,
     attr_parser: P,
@@ -353,11 +368,11 @@ where
         .labelled(name)
 }
 
+/// Parse a node (text, tag, reset, or raw)
 pub fn node<'src>() -> impl Parser<'src, &'src str, Node, Err<'src>> + Clone {
     recursive(|node| {
         let content = node.repeated().collect();
 
-        // `<>…</>` — hard SGR reset
         let reset = just("<>")
             .ignore_then(content.clone())
             .then_ignore(just("</>"))
@@ -367,7 +382,6 @@ pub fn node<'src>() -> impl Parser<'src, &'src str, Node, Err<'src>> + Clone {
             })
             .labelled("reset");
 
-        // `<! 1 31 42>…</!>` — raw SGR codes, space-separated bytes
         let raw = just("<!")
             .ignore_then(any().filter(|c| *c != '>').repeated().collect())
             .then_ignore(just('>').labelled("closing `>`"))
@@ -388,7 +402,7 @@ pub fn node<'src>() -> impl Parser<'src, &'src str, Node, Err<'src>> + Clone {
     })
 }
 
-// ── Document ──────────────────────────────────────────────────────────────────
+// Document
 
 fn document_parser<'src>() -> impl Parser<'src, &'src str, Document, Err<'src>> {
     node()
@@ -398,22 +412,25 @@ fn document_parser<'src>() -> impl Parser<'src, &'src str, Document, Err<'src>> 
         .map(|root| Document { root })
 }
 
+/// A parsed AML document.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Document {
+    /// Root nodes of the document.
     pub root: Vec<Node>,
 }
 
 impl Document {
-    /// Panics on failure.
+    /// Parse input, panicking on failure.
     pub fn new(input: &str) -> Self {
         Document::try_new(input).unwrap()
     }
 
-    /// Parse `input`, returning errors instead of panicking.
+    /// Parse input, returning errors instead of panicking.
     pub fn try_new(input: &str) -> Result<Self, Vec<Rich<'_, char>>> {
         document_parser().parse(input).into_result()
     }
 
+    /// Render this document to ANSI-escaped text.
     pub fn render(&self) -> String {
         crate::render::render(self)
     }

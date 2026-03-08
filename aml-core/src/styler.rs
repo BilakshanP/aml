@@ -5,6 +5,10 @@ use crate::{
     render::{RESET, wrap},
 };
 
+/// A compiled style specification.
+///
+/// Created by parsing a style string like "f#ff0000 b#00ff00 mbi" and compiled
+/// into ANSI escape codes ready to apply to text.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Style {
     fg: Option<Colour>,
@@ -13,6 +17,15 @@ pub struct Style {
 }
 
 impl Style {
+    /// Parse a style specification string.
+    ///
+    /// Format: space-separated foreground color, background color, and/or modifiers.
+    /// Examples:
+    /// - "f#ff0000" - red foreground
+    /// - "b#00ff00 mbi" - green background, bold, italic
+    /// - "fR mbu" - red foreground, bold, underline
+    ///
+    /// Returns an error if the input is invalid.
     pub fn new(spec: &str) -> Result<Self, Vec<Rich<'_, char>>> {
         let shorthand = shorthand().parse(spec).into_result()?;
 
@@ -22,6 +35,7 @@ impl Style {
         }
     }
 
+    /// Compile this style into ANSI escape codes.
     pub fn compile(&self) -> CompiledStyle {
         let mut parts = Vec::new();
 
@@ -42,15 +56,23 @@ impl Style {
         CompiledStyle(wrap(&parts))
     }
 
+    /// Parse a style string and apply it to text in one step.
+    ///
+    /// Example:
+    /// ```ignore
+    /// let styled = Style::apply("f#ff0000 mbi", "Hello")?;
+    /// ```
     pub fn apply<'src>(spec: &'src str, text: &'src str) -> Result<String, Vec<Rich<'src, char>>> {
         Ok(Style::new(spec)?.compile().paint(text))
     }
 }
 
+/// A compiled ANSI escape code sequence ready to apply to text.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompiledStyle(pub String);
 
 impl CompiledStyle {
+    /// Apply this style to text, returning styled text with a trailing reset.
     pub fn paint(&self, text: &str) -> String {
         format!("{}{text}{RESET}", self.0)
     }

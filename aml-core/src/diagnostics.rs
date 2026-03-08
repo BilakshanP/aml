@@ -2,6 +2,24 @@ use ariadne::{Color, Label, Report, ReportKind, Source};
 use chumsky::error::Rich;
 use std::io::Write;
 
+/// Print parse error diagnostics to a writer.
+///
+/// Formats and outputs parser errors in a human-readable format with source
+/// location information. Useful for error reporting in CLIs and error handlers.
+///
+/// # Arguments
+///
+/// * `input` - The source text that was parsed
+/// * `file` - The filename to display in error messages
+/// * `errs` - A collection of parse errors from the parser
+/// * `output` - The writer where formatted errors will be written
+///
+/// # Example
+///
+/// ```ignore
+/// let errs = document_parser.parse(input).errors();
+/// report(&input, "style.aml", errs, &mut std::io::stdout())?;
+/// ```
 pub fn report<W: Write>(
     input: &str,
     file: &str,

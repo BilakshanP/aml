@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::parser::{Colour, Document, Mdf, Node, Tag};
 
-// ── ANSI escape helpers ───────────────────────────────────────────────────────
+// ANSI escape helpers
 
 pub const CSI: &str = "\x1b[";
 pub const RESET: &str = "\x1b[0m";
@@ -17,10 +17,10 @@ pub(crate) fn wrap(codes: &[u8]) -> String {
     format!("{CSI}{inner}m")
 }
 
-// ── Terminal state ────────────────────────────────────────────────────────────
+// Terminal state
 
-/// The SGR attributes we believe the terminal currently has active, inferred
-/// from what we have emitted. Used to compute minimal transitions.
+/// The SGR attributes currently active in the terminal, inferred from emitted codes.
+/// Used to compute minimal state transitions.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 struct TermState {
     fg: Option<Colour>,
@@ -37,14 +37,13 @@ impl TermState {
 /// Compute the minimal CSI sequence to move the terminal from `from` to `to`.
 /// Returns `None` if no transition is needed.
 ///
-/// Strategy
-/// --------
-/// - **`to` is default** → emit a bare `ESC[0m` reset; always cheapest.
-/// - **Something must be removed** (fg/bg cleared, or a modifier dropped) →
-///   `ESC[0;…m` — reset then re-apply everything desired in one shot, because
-///   SGR provides no reliable per-attribute "off" codes across all terminals.
-/// - **Pure additions only** → emit only the new codes and let the terminal's
-///   cumulative SGR behaviour do the rest.
+/// Strategy:
+/// - If `to` is default, emit a bare ESC[0m reset (always cheapest).
+/// - If something must be removed (fg/bg cleared or a modifier dropped),
+///   emit ESC[0;...m - reset then re-apply everything, since SGR provides
+///   no reliable per-attribute off codes across all terminals.
+/// - If only additions are needed, emit only new codes and let the terminal's
+///   cumulative SGR behavior handle the rest.
 fn transition(from: &TermState, to: &TermState) -> Option<String> {
     if from == to {
         return None;
@@ -68,7 +67,7 @@ fn transition(from: &TermState, to: &TermState) -> Option<String> {
         return Some(wrap(&codes));
     }
 
-    // Pure additions — include unchanged fg/bg too so the sequence is
+    // Pure additions - include unchanged fg/bg too so the sequence is
     // self-contained and survives future modifier additions.
     let mut codes: Vec<u8> = Vec::new();
 
@@ -87,7 +86,7 @@ fn sorted_mdf_codes(mdf: &HashSet<Mdf>) -> Vec<u8> {
     v
 }
 
-// ── Style stack ───────────────────────────────────────────────────────────────
+// Style stack
 
 #[derive(Debug, Default)]
 struct StyleStack(Vec<Tag>);
@@ -100,8 +99,9 @@ impl StyleStack {
         self.0.pop();
     }
 
-    /// Walk layers innermost-first, accumulating fg / bg / mdf, stopping at
-    /// the first [`Tag::Reset`] encountered.
+    /// Resolve the current style by walking layers innermost-first,
+    /// accumulating foreground, background, and modifiers.
+    /// Stops at the first Reset tag encountered.
     fn resolve(&self) -> TermState {
         let mut state = TermState::default();
 
@@ -117,7 +117,7 @@ impl StyleStack {
                 }
                 Tag::Mdf(m) => state.mdf.extend(&m.0),
 
-                // Raw codes are opaque — they do not participate in stack resolution.
+                // Raw codes are opaque - they don't participate in stack resolution.
                 Tag::Raw(_) => {}
 
                 Tag::Shorthand { fg, bg, mdf } => {
@@ -138,7 +138,7 @@ impl StyleStack {
     }
 }
 
-// ── Renderer ──────────────────────────────────────────────────────────────────
+// Renderer
 
 fn render_nodes(nodes: &[Node], stack: &mut StyleStack, out: &mut String, current: &mut TermState) {
     for node in nodes {
@@ -157,15 +157,15 @@ fn render_nodes(nodes: &[Node], stack: &mut StyleStack, out: &mut String, curren
                 let is_raw = matches!(tag, Tag::Raw(_));
 
                 if is_reset {
-                    // Explicit `<>` — emit immediately regardless of cached state.
+                    // Explicit reset tag - emit immediately regardless of state.
                     out.push_str(RESET);
                     *current = TermState::default();
                 }
 
                 if is_raw {
-                    // Emit the raw CSI sequence immediately. We deliberately do
-                    // *not* update `current` — Raw is transparent to TermState.
-                    // Children will resolve and emit their own transitions on top.
+                    // Emit raw CSI sequence immediately. Don't update current state
+                    // since raw codes are transparent. Children will emit their own
+                    // transitions on top.
                     if let Tag::Raw(codes) = tag {
                         out.push_str(&format!("{CSI}{codes}"));
                     }
@@ -176,7 +176,7 @@ fn render_nodes(nodes: &[Node], stack: &mut StyleStack, out: &mut String, curren
                 stack.pop();
 
                 if is_reset {
-                    // Restore parent context after `</>`.
+                    // Restore parent context after closing reset tag.
                     let desired = stack.resolve();
 
                     if let Some(seq) = transition(current, &desired) {
@@ -186,7 +186,7 @@ fn render_nodes(nodes: &[Node], stack: &mut StyleStack, out: &mut String, curren
                 }
 
                 if is_raw {
-                    // Universal reset after `</!>`, then re-apply parent context.
+                    // Emit universal reset after raw tag, then re-apply parent context.
                     out.push_str(RESET);
                     *current = TermState::default();
                     let desired = stack.resolve();
@@ -197,15 +197,17 @@ fn render_nodes(nodes: &[Node], stack: &mut StyleStack, out: &mut String, curren
                     }
                 }
 
-                // Non-reset/raw tags emit nothing on close — the next Text node
+                // Non-reset/raw tags emit nothing on close - the next Text node
                 // diffs lazily and emits only what changed.
             }
         }
     }
 }
 
-/// Render `doc` to a string of ANSI-escaped text, with a trailing reset if
-/// any style attributes were left active.
+/// Render a document to ANSI-escaped text.
+///
+/// The output is an ANSI-formatted string ready for terminal display. If any
+/// style attributes are left active at the end, a trailing reset is added.
 pub fn render(doc: &Document) -> String {
     let mut out = String::new();
     let mut stack = StyleStack::default();
