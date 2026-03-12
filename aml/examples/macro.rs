@@ -1,7 +1,7 @@
-use aml::style;
+use aml::{style, styler::CompiledStyle};
+
+const INFO: CompiledStyle = style!("fR");
 
 fn main() {
-    let info = style!("fR");
-
-    println!("{}", info.paint("Hiii"))
+    println!("{}", INFO.paint("Hiii"))
 }

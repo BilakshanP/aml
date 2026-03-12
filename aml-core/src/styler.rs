@@ -53,7 +53,7 @@ impl Style {
             parts.extend(mods);
         }
 
-        CompiledStyle(wrap(&parts))
+        CompiledStyle(wrap(&parts).leak())
     }
 
     /// Parse a style string and apply it to text in one step.
@@ -69,7 +69,7 @@ impl Style {
 
 /// A compiled ANSI escape code sequence ready to apply to text.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CompiledStyle(pub String);
+pub struct CompiledStyle(pub &'static str);
 
 impl CompiledStyle {
     /// Apply this style to text, returning styled text with a trailing reset.
@@ -90,7 +90,7 @@ impl quote::ToTokens for CompiledStyle {
         let inner = &self.0;
 
         tokens.extend(quote::quote! {
-            ::aml::styler::CompiledStyle(#inner.to_owned())
+            ::aml::styler::CompiledStyle(#inner)
         });
     }
 }
