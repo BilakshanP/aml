@@ -12,5 +12,5 @@ proc-macro = true
 [dependencies]
 aml-core = { workspace = true, features = ["quote", "styler"] }
 proc-macro2 = "1.0.106"
-quote = "1.0.45"
+quote = "1.0"
 syn = { version = "2.0.117" }
