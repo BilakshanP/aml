@@ -39,6 +39,7 @@ name = "aml-core"
 version = "0.1.0"
 dependencies = [
  "ariadne",
+ "bitflags",
  "chumsky",
  "proc-macro2",
  "quote",
@@ -122,6 +123,12 @@ dependencies = [
  "unicode-width",
  "yansi",
 ]
+
+[[package]]
+name = "bitflags"
+version = "2.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "843867be96c8daad0d758b57df9392b6d8d271134fce549de6ce169ff98a92af"
 
 [[package]]
 name = "cc"

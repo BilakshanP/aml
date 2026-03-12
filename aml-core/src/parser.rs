@@ -1,5 +1,4 @@
-use std::collections::HashSet;
-
+use bitflags::bitflags;
 use chumsky::error::Rich;
 use chumsky::prelude::*;
 
@@ -72,26 +71,55 @@ impl Colour {
 
 // Modifiers
 
-/// SGR text modifier/attribute.
-#[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Mdf {
-    Bold = 1,
-    Dim = 2,
-    Italic = 3,
-    Underline = 4,
-    Blink = 5,
-    RapidBlink = 6,
-    Invert = 7,
-    Hide = 8,
-    Strike = 9,
-    DoubleUnderline = 21,
-    Overline = 53,
+bitflags! {
+    /// SGR text modifier/attribute flags.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct Modifiers: u64 {
+        const BOLD = 1 << 0;
+        const DIM = 1 << 1;
+        const ITALIC = 1 << 2;
+        const UNDERLINE = 1 << 3;
+        const BLINK = 1 << 4;
+        const RAPID_BLINK = 1 << 5;
+        const INVERT = 1 << 6;
+        const HIDE = 1 << 7;
+        const STRIKE = 1 << 8;
+        const DOUBLE_UNDERLINE = 1 << 9;
+        const OVERLINE = 1 << 10;
+    }
 }
 
-/// A set of text modifiers.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Modifiers(pub HashSet<Mdf>);
+impl Modifiers {
+    /// Maps each [`Modifiers`] flag to its SGR code.
+    const SGR_CODES: &[(Modifiers, u8)] = &[
+        (Modifiers::BOLD, 1),
+        (Modifiers::DIM, 2),
+        (Modifiers::ITALIC, 3),
+        (Modifiers::UNDERLINE, 4),
+        (Modifiers::BLINK, 5),
+        (Modifiers::RAPID_BLINK, 6),
+        (Modifiers::INVERT, 7),
+        (Modifiers::HIDE, 8),
+        (Modifiers::STRIKE, 9),
+        (Modifiers::DOUBLE_UNDERLINE, 21),
+        (Modifiers::OVERLINE, 53),
+    ];
+
+    /// Get all SGR codes for the active modifiers in sorted order.
+    pub fn sgr_codes(self) -> impl Iterator<Item = u8> {
+        Self::SGR_CODES
+            .iter()
+            .filter(move |(flag, _)| self.contains(*flag))
+            .map(|&(_, code)| code)
+        // .collect()
+    }
+}
+
+impl Default for Modifiers {
+    fn default() -> Self {
+        Modifiers::empty()
+    }
+}
 
 // Tag
 
@@ -281,24 +309,27 @@ fn colour<'src>() -> impl Parser<'src, &'src str, Colour, Err<'src>> + Clone {
 
 // Modifier parsers
 
-fn modifier<'src>() -> impl Parser<'src, &'src str, Mdf, Err<'src>> + Clone {
+fn modifier<'src>() -> impl Parser<'src, &'src str, Modifiers, Err<'src>> + Clone {
     choice((
-        just('b').to(Mdf::Bold),
-        just('d').to(Mdf::Dim),
-        just('i').to(Mdf::Italic),
-        just('u').to(Mdf::Underline),
-        just('k').to(Mdf::Blink),
-        just('r').to(Mdf::RapidBlink),
-        just('v').to(Mdf::Invert),
-        just('h').to(Mdf::Hide),
-        just('s').to(Mdf::Strike),
-        just('l').to(Mdf::DoubleUnderline),
-        just('o').to(Mdf::Overline),
+        just('b').to(Modifiers::BOLD),
+        just('d').to(Modifiers::DIM),
+        just('i').to(Modifiers::ITALIC),
+        just('u').to(Modifiers::UNDERLINE),
+        just('k').to(Modifiers::BLINK),
+        just('r').to(Modifiers::RAPID_BLINK),
+        just('v').to(Modifiers::INVERT),
+        just('h').to(Modifiers::HIDE),
+        just('s').to(Modifiers::STRIKE),
+        just('l').to(Modifiers::DOUBLE_UNDERLINE),
+        just('o').to(Modifiers::OVERLINE),
     ))
 }
 
 fn modifiers<'src>() -> impl Parser<'src, &'src str, Modifiers, Err<'src>> + Clone {
-    modifier().repeated().at_least(1).collect().map(Modifiers)
+    modifier()
+        .repeated()
+        .at_least(1)
+        .fold(Modifiers::empty(), |acc, m| acc | m)
 }
 
 // Shorthand arg parsers

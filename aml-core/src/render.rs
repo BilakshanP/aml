@@ -1,6 +1,4 @@
-use std::collections::HashSet;
-
-use crate::parser::{Colour, Document, Mdf, Node, Tag};
+use crate::parser::{Colour, Document, Modifiers, Node, Tag};
 
 // ANSI escape helpers
 
@@ -25,7 +23,7 @@ pub(crate) fn wrap(codes: &[u8]) -> String {
 struct TermState {
     fg: Option<Colour>,
     bg: Option<Colour>,
-    mdf: HashSet<Mdf>,
+    mdf: Modifiers,
 }
 
 impl TermState {
@@ -55,14 +53,14 @@ fn transition(from: &TermState, to: &TermState) -> Option<String> {
 
     let needs_reset = (from.fg.is_some() && to.fg.is_none())
         || (from.bg.is_some() && to.bg.is_none())
-        || from.mdf.difference(&to.mdf).next().is_some();
+        || !to.mdf.contains(from.mdf);
 
     if needs_reset {
         let mut codes: Vec<u8> = vec![0];
 
         codes.extend(to.fg.as_ref().map_or(vec![], Colour::fg_codes));
         codes.extend(to.bg.as_ref().map_or(vec![], Colour::bg_codes));
-        codes.extend(sorted_mdf_codes(&to.mdf));
+        codes.extend(to.mdf.sgr_codes());
 
         return Some(wrap(&codes));
     }
@@ -73,17 +71,9 @@ fn transition(from: &TermState, to: &TermState) -> Option<String> {
 
     codes.extend(to.fg.as_ref().map_or(vec![], Colour::fg_codes));
     codes.extend(to.bg.as_ref().map_or(vec![], Colour::bg_codes));
-    codes.extend(sorted_mdf_codes(
-        &to.mdf.difference(&from.mdf).copied().collect(),
-    ));
+    codes.extend((to.mdf - from.mdf).sgr_codes());
 
     (!codes.is_empty()).then(|| wrap(&codes))
-}
-
-fn sorted_mdf_codes(mdf: &HashSet<Mdf>) -> Vec<u8> {
-    let mut v: Vec<u8> = mdf.iter().map(|&m| m as u8).collect();
-    v.sort_unstable();
-    v
 }
 
 // Style stack
@@ -115,7 +105,7 @@ impl StyleStack {
                 Tag::Bg(c) => {
                     state.bg.get_or_insert(*c);
                 }
-                Tag::Mdf(m) => state.mdf.extend(&m.0),
+                Tag::Mdf(m) => state.mdf |= *m,
 
                 // Raw codes are opaque - they don't participate in stack resolution.
                 Tag::Raw(_) => {}
@@ -128,7 +118,7 @@ impl StyleStack {
                         state.bg.get_or_insert(*c);
                     }
                     if let Some(m) = mdf {
-                        state.mdf.extend(&m.0);
+                        state.mdf |= *m;
                     }
                 }
             }

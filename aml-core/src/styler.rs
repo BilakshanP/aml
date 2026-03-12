@@ -47,10 +47,8 @@ impl Style {
             parts.extend(bg.bg_codes());
         }
 
-        if let Some(Modifiers(ms)) = &self.mdf {
-            let mut mods = ms.iter().map(|m| *m as u8).collect::<Vec<_>>();
-            mods.sort();
-            parts.extend(mods);
+        if let Some(mdf) = &self.mdf {
+            parts.extend(mdf.sgr_codes());
         }
 
         CompiledStyle(wrap(&parts).leak())
