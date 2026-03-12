@@ -9,6 +9,10 @@ pub struct Cli {
     #[command(flatten)]
     pub input: Input,
 
+    /// Apply a shorthand style to input text.
+    #[arg(short = 't', long, value_name = "STYLE")]
+    pub style: Option<String>,
+
     /// Emit raw output (debug representation).
     #[arg(short, long)]
     pub raw: bool,
@@ -35,13 +39,13 @@ pub struct Input {
     /// AML markup string to render.
     pub markup: Option<String>,
 
-    /// Read AML markup from a file.
-    #[arg(short, long, value_name = "FILE")]
-    pub file: Option<std::path::PathBuf>,
-
     /// Read AML markup from stdin.
     #[arg(short, long)]
     pub stdin: bool,
+
+    /// Read AML markup from a file.
+    #[arg(short, long, value_name = "FILE")]
+    pub file: Option<std::path::PathBuf>,
 }
 
 impl Input {
@@ -67,6 +71,37 @@ impl Input {
             return Ok(Info::new("stdin", input));
         }
 
-        unreachable!("clap ensures that one of the input options is always set")
+        Err("one of <MARKUP>, --file, or --stdin must be provided".to_string())
+    }
+}
+
+impl Cli {
+    /// Get input from the Input group.
+    /// One of markup/file/stdin must be specified.
+    pub fn get_input(&self) -> Result<Info<'_>, String> {
+        // Check if any input source is specified
+        let has_input =
+            self.input.markup.is_some() || self.input.file.is_some() || self.input.stdin;
+
+        if !has_input {
+            return Err("one of <MARKUP>, --file, or --stdin must be provided".to_string());
+        }
+
+        // Use the Input group
+        self.input.read()
+    }
+
+    /// Apply a style to unstyled input text using the styler feature.
+    /// Returns the styled text or the original text if no style is provided.
+    pub fn apply_style(&self, input: String) -> Result<String, String> {
+        match &self.style {
+            Some(style) => {
+                use aml::styler::Style;
+                let trimmed = input.trim_end_matches('\n');
+                Style::apply(style, trimmed)
+                    .map_err(|_| format!("Invalid style specification: {}", style))
+            }
+            None => Ok(input),
+        }
     }
 }

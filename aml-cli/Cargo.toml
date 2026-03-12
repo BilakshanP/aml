@@ -11,6 +11,6 @@ name = "aml"
 path = "src/main.rs"
 
 [dependencies]
-aml = { workspace = true, features = ["diagnostics"] }
+aml = { workspace = true, features = ["diagnostics", "styler"] }
 chumsky = "0.12.0"
 clap = { version = "4", features = ["derive"] }

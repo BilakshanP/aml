@@ -6,20 +6,44 @@ use clap::Parser;
 
 use aml::prelude::*;
 
-use cli::{Cli, Info};
+use cli::Cli;
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
 
-    let Info { name, input } = match cli.input.read() {
-        Ok(s) => s,
+    let info = match cli.get_input() {
+        Ok(i) => i,
         Err(e) => {
             eprintln!("error: {e}");
             return ExitCode::FAILURE;
         }
     };
 
-    match Document::try_new(&input) {
+    // If --style is provided, apply style directly without parsing
+    if cli.style.is_some() {
+        let styled = match cli.apply_style(info.input) {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("error: {e}");
+                return ExitCode::FAILURE;
+            }
+        };
+
+        if cli.raw {
+            print!("{styled:?}");
+        } else {
+            print!("{styled}");
+        }
+
+        if !cli.no_newline {
+            println!();
+        }
+
+        return ExitCode::SUCCESS;
+    }
+
+    // Otherwise, parse as markup
+    match Document::try_new(&info.input) {
         Ok(doc) => {
             let rendered = doc.render();
 
@@ -36,7 +60,7 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Err(errs) => {
-            report(&input, name, errs, &mut std::io::stdout()).expect("print to stdout");
+            report(&info.input, info.name, errs, &mut std::io::stdout()).expect("print to stdout");
             ExitCode::FAILURE
         }
     }
