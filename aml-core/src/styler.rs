@@ -78,7 +78,7 @@ impl CompiledStyle {
 
 impl std::fmt::Display for CompiledStyle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)
+        f.write_str(self.0)
     }
 }
 

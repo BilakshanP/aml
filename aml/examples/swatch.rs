@@ -90,10 +90,10 @@ fn print_colour_cube() {
                 print!(" ");
             }
 
-            println!("");
+            println!();
         }
 
-        println!("");
+        println!();
     }
 }
 
