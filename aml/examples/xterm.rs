@@ -7,7 +7,6 @@ use aml::prelude::*;
 
 fn main() {
     let input = include_str!("markups/xterm.aml");
-    let doc = Document::new(input);
-
+    let doc = Document::try_new(input).unwrap();
     print!("{}", doc.render());
 }

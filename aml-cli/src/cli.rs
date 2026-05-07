@@ -20,6 +20,10 @@ pub struct Cli {
     /// Do not print a trailing newline.
     #[arg(short = 'n', long = "no-newline")]
     pub no_newline: bool,
+
+    /// Maximum input size in bytes (default: 1MB).
+    #[arg(long, default_value = "1048576", value_name = "BYTES")]
+    pub max_size: usize,
 }
 
 pub struct Info<'src> {
@@ -55,7 +59,7 @@ impl Input {
         }
 
         if let Some(path) = &self.file {
-            let name = path.to_str().expect("Valid unicode file path");
+            let name = path.to_str().unwrap_or("<non-utf8 path>");
 
             let content =
                 std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
@@ -87,8 +91,17 @@ impl Cli {
             return Err("one of <MARKUP>, --file, or --stdin must be provided".to_string());
         }
 
-        // Use the Input group
-        self.input.read()
+        let info = self.input.read()?;
+
+        if info.input.len() > self.max_size {
+            return Err(format!(
+                "input exceeds maximum size ({} bytes > {} bytes limit)",
+                info.input.len(),
+                self.max_size
+            ));
+        }
+
+        Ok(info)
     }
 
     /// Apply a style to unstyled input text using the styler feature.
@@ -98,7 +111,7 @@ impl Cli {
             Some(style) => {
                 use aml::styler::Style;
                 let trimmed = input.trim_end_matches('\n');
-                Style::apply(style, trimmed)
+                Style::paint_str(style, trimmed)
                     .map_err(|_| format!("Invalid style specification: {}", style))
             }
             None => Ok(input),

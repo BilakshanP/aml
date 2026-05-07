@@ -16,9 +16,16 @@ use std::io::Write;
 ///
 /// # Example
 ///
-/// ```ignore
-/// let errs = document_parser.parse(input).errors();
-/// report(&input, "style.aml", errs, &mut std::io::stdout())?;
+/// ```
+/// use aml_core::parser::Document;
+/// use aml_core::diagnostics::report;
+///
+/// let input = "<fr>unclosed";
+/// if let Err(errs) = Document::try_new(input) {
+///     let mut buf = Vec::new();
+///     report(input, "example.aml", errs, &mut buf).unwrap();
+///     assert!(!buf.is_empty());
+/// }
 /// ```
 pub fn report<W: Write>(
     input: &str,

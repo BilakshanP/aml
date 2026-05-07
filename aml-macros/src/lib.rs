@@ -11,7 +11,10 @@ use syn::{Error, LitStr, parse_macro_input};
 /// # Example
 ///
 /// ```ignore
-/// let style = style!("f#ff0000 mbi");  // red foreground, bold, italic
+/// // Note: this doc-test is ignored because proc-macro crates cannot
+/// // reference their consumer (`aml`) in doc-tests.
+/// use aml::{style, styler::CompiledStyle};
+/// let style: CompiledStyle = style!("f#ff0000 mbi");  // red foreground, bold, italic
 /// println!("{}{}{}", style, "Hello", aml::render::RESET);
 /// ```
 ///

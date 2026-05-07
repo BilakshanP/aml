@@ -5,10 +5,11 @@ use crate::{
     render::{RESET, wrap},
 };
 
-/// A compiled style specification.
+/// A parsed style specification.
 ///
-/// Created by parsing a style string like "f#ff0000 b#00ff00 mbi" and compiled
-/// into ANSI escape codes ready to apply to text.
+/// Created by parsing a style string like "f#ff0000 b#00ff00 mbi".
+/// Use [`Style::paint`] for runtime styling or [`Style::compile`] only
+/// in const/proc-macro contexts.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Style {
     fg: Option<Colour>,
@@ -35,37 +36,71 @@ impl Style {
         }
     }
 
-    /// Compile this style into ANSI escape codes.
-    pub fn compile(&self) -> CompiledStyle {
+    /// Build the SGR code sequence for this style.
+    fn codes(&self) -> Vec<u8> {
         let mut parts = Vec::new();
-
         if let Some(fg) = self.fg {
             parts.extend(fg.fg_codes());
         }
-
         if let Some(bg) = self.bg {
             parts.extend(bg.bg_codes());
         }
-
         if let Some(mdf) = &self.mdf {
             parts.extend(mdf.sgr_codes());
         }
+        parts
+    }
 
-        CompiledStyle(wrap(&parts).leak())
+    /// Apply this style to text, returning styled text with a trailing reset.
+    ///
+    /// This is the preferred runtime method — it does not leak memory.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use aml_core::styler::Style;
+    /// let styled = Style::paint_str("fr mbi", "Hello").unwrap();
+    /// assert!(styled.contains("Hello"));
+    /// ```
+    pub fn paint(&self, text: &str) -> String {
+        format!("{}{text}{RESET}", wrap(&self.codes()))
     }
 
     /// Parse a style string and apply it to text in one step.
     ///
-    /// Example:
-    /// ```ignore
-    /// let styled = Style::apply("f#ff0000 mbi", "Hello")?;
+    /// # Example
+    ///
     /// ```
+    /// use aml_core::styler::Style;
+    /// let styled = Style::paint_str("fr mbi", "Hello").unwrap();
+    /// assert!(styled.contains("Hello"));
+    /// ```
+    pub fn paint_str<'src>(spec: &'src str, text: &'src str) -> Result<String, Vec<Rich<'src, char>>> {
+        Ok(Style::new(spec)?.paint(text))
+    }
+
+    /// Compile this style into a `CompiledStyle` holding a `&'static str`.
+    ///
+    /// **Warning:** This leaks memory. It is intended only for use by the
+    /// `style!` proc-macro to produce `const`-compatible values. For runtime
+    /// styling, use [`Style::paint`] or [`Style::paint_str`] instead.
+    #[doc(hidden)]
+    pub fn compile(&self) -> CompiledStyle {
+        CompiledStyle(wrap(&self.codes()).leak())
+    }
+
+    /// Deprecated: use [`Style::paint_str`] instead.
+    #[deprecated(since = "0.1.1", note = "use Style::paint_str instead, Style::apply leaks memory")]
     pub fn apply<'src>(spec: &'src str, text: &'src str) -> Result<String, Vec<Rich<'src, char>>> {
-        Ok(Style::new(spec)?.compile().paint(text))
+        Style::paint_str(spec, text)
     }
 }
 
-/// A compiled ANSI escape code sequence ready to apply to text.
+/// A compiled ANSI escape code sequence for use in `const` contexts.
+///
+/// This type holds a `&'static str` and is produced by the `style!` proc-macro
+/// at compile time. Do not construct at runtime (it leaks memory); use
+/// [`Style::paint`] instead.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompiledStyle(pub &'static str);
 

@@ -19,7 +19,7 @@ checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
 name = "aml"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "aml-core",
  "aml-macros",
@@ -27,7 +27,7 @@ dependencies = [
 
 [[package]]
 name = "aml-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "aml",
  "chumsky",
@@ -36,7 +36,7 @@ dependencies = [
 
 [[package]]
 name = "aml-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "ariadne",
  "bitflags",
@@ -47,7 +47,7 @@ dependencies = [
 
 [[package]]
 name = "aml-macros"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "aml-core",
  "proc-macro2",

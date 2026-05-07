@@ -60,7 +60,7 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Err(errs) => {
-            report(&info.input, info.name, errs, &mut std::io::stdout()).expect("print to stdout");
+            report(&info.input, info.name, errs, &mut std::io::stderr()).expect("print to stderr");
             ExitCode::FAILURE
         }
     }

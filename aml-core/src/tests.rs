@@ -7,6 +7,7 @@ fn csi(s: &str) -> String {
     format!("{CSI}{s}m")
 }
 
+#[allow(deprecated)]
 fn rendered(input: &str) -> String {
     render(&Document::new(input))
 }

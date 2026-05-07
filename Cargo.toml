@@ -3,16 +3,16 @@ resolver = "2"
 members = ["aml", "aml-core", "aml-macros", "aml-cli"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Bilakshan Purohit (@bilakshanp)"]
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/bilakshanp/aml"
 
 [workspace.dependencies]
-aml = { path = "aml", version = "0.1.0" }
-aml-core = { path = "aml-core", version = "0.1.0" }
-aml-macros = { path = "aml-macros", version = "0.1.0" }
+aml = { path = "aml", version = "0.1.1" }
+aml-core = { path = "aml-core", version = "0.1.1" }
+aml-macros = { path = "aml-macros", version = "0.1.1" }
 
 [profile.release]
 lto = "fat"

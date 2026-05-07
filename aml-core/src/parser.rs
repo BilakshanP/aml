@@ -150,6 +150,13 @@ pub enum Tag {
     },
     /// Raw SGR codes: `<! 0 123 255>...</!>`
     /// Emitted verbatim and transparent to the style stack.
+    ///
+    /// # Security
+    ///
+    /// Raw tags emit arbitrary CSI sequences without validation. When rendering
+    /// untrusted input, raw tags could be used to clear the screen (`2J`),
+    /// hide the cursor (`?25l`), or issue other terminal control sequences.
+    /// Do not render untrusted AML containing raw tags without sanitization.
     Raw(String),
 }
 
@@ -452,6 +459,12 @@ pub struct Document {
 
 impl Document {
     /// Parse input, panicking on failure.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the input contains invalid AML markup. Prefer [`Document::try_new`]
+    /// for fallible parsing.
+    #[deprecated(since = "0.1.1", note = "use Document::try_new instead; this panics on invalid input")]
     pub fn new(input: &str) -> Self {
         Document::try_new(input).unwrap()
     }
