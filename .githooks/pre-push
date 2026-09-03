@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# Pre-push hook: run the full workspace test suite with all features before
+# allowing a push. Enable it once per clone with:
+#
+#     git config core.hooksPath .githooks
+#
+# To bypass in an emergency: `git push --no-verify` (avoid as a habit).
+
+set -eu
+
+echo "pre-push: running cargo test --workspace --all-features ..."
+
+if ! cargo test --workspace --all-features; then
+    echo "pre-push: tests failed — push aborted." >&2
+    exit 1
+fi
+
+echo "pre-push: all tests passed."
