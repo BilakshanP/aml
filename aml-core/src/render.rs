@@ -85,6 +85,7 @@ impl StyleStack {
     fn push(&mut self, tag: Tag) {
         self.0.push(tag);
     }
+
     fn pop(&mut self) {
         self.0.pop();
     }
@@ -102,6 +103,7 @@ impl StyleStack {
                 Tag::Fg(c) => {
                     state.fg.get_or_insert(*c);
                 }
+
                 Tag::Bg(c) => {
                     state.bg.get_or_insert(*c);
                 }
@@ -114,9 +116,11 @@ impl StyleStack {
                     if let Some(c) = fg {
                         state.fg.get_or_insert(*c);
                     }
+
                     if let Some(c) = bg {
                         state.bg.get_or_insert(*c);
                     }
+
                     if let Some(m) = mdf {
                         state.mdf |= *m;
                     }
@@ -135,10 +139,12 @@ fn render_nodes(nodes: &[Node], stack: &mut StyleStack, out: &mut String, curren
         match node {
             Node::Text(text) => {
                 let desired = stack.resolve();
+
                 if let Some(seq) = transition(current, &desired) {
                     out.push_str(&seq);
                     *current = desired;
                 }
+
                 out.push_str(text);
             }
 

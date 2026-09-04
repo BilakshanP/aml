@@ -2,8 +2,13 @@ use bitflags::bitflags;
 use chumsky::error::Rich;
 use chumsky::prelude::*;
 
+const COLOR_OFFSET: u8 = 30;
 const BRIGHT_OFFSET: u8 = 60;
 const BACKGROUND_OFFSET: u8 = 10;
+
+const NON_ANSI_RGB: u8 = 2;
+const NON_ANSI_FIXED: u8 = 5;
+const NON_ANSI_BASE: u8 = 38;
 
 type Err<'src> = extra::Err<Rich<'src, char>>;
 
@@ -13,20 +18,20 @@ type Err<'src> = extra::Err<Rich<'src, char>>;
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Clr {
-    Black = 30,
-    Red = 31,
-    Green = 32,
-    Yellow = 33,
-    Blue = 34,
-    Magenta = 35,
-    Cyan = 36,
-    White = 37,
+    Black = COLOR_OFFSET, // 30
+    Red,                  // 31
+    Green,                // 32
+    Yellow,               // 33
+    Blue,                 // 34
+    Magenta,              // 35
+    Cyan,                 // 36
+    White,                // 37
 }
 
 #[repr(u8)]
 enum Variant {
     Fg = 0,
-    Bg = BACKGROUND_OFFSET,
+    Bg = BACKGROUND_OFFSET, // 10
 }
 
 /// A color specification supporting ANSI 8/16, 256-color, and RGB modes.
@@ -42,9 +47,13 @@ pub enum Colour {
 
 impl Colour {
     fn base(&self) -> u8 {
+        fn ansi_base(clr: Clr, bright: bool) -> u8 {
+            clr as u8 + if bright { BRIGHT_OFFSET } else { 0 }
+        }
+
         match self {
-            Self::Ansi { clr, bright } => *clr as u8 + if *bright { BRIGHT_OFFSET } else { 0 },
-            Self::Fixed(_) | Self::Rgb { .. } => 38,
+            &Self::Ansi { clr, bright } => ansi_base(clr, bright),
+            Self::Fixed(_) | Self::Rgb { .. } => NON_ANSI_BASE,
         }
     }
 
@@ -52,8 +61,8 @@ impl Colour {
         let base = self.base() + variant as u8;
 
         match *self {
-            Self::Fixed(n) => vec![base, 5, n],
-            Self::Rgb { r, g, b } => vec![base, 2, r, g, b],
+            Self::Fixed(n) => vec![base, NON_ANSI_FIXED, n],
+            Self::Rgb { r, g, b } => vec![base, NON_ANSI_RGB, r, g, b],
             _ => vec![base],
         }
     }
@@ -73,19 +82,19 @@ impl Colour {
 
 bitflags! {
     /// SGR text modifier/attribute flags.
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
     pub struct Modifiers: u64 {
-        const BOLD = 1 << 0;
-        const DIM = 1 << 1;
-        const ITALIC = 1 << 2;
-        const UNDERLINE = 1 << 3;
-        const BLINK = 1 << 4;
-        const RAPID_BLINK = 1 << 5;
-        const INVERT = 1 << 6;
-        const HIDE = 1 << 7;
-        const STRIKE = 1 << 8;
+        const BOLD             = 1 << 0;
+        const DIM              = 1 << 1;
+        const ITALIC           = 1 << 2;
+        const UNDERLINE        = 1 << 3;
+        const BLINK            = 1 << 4;
+        const RAPID_BLINK      = 1 << 5;
+        const INVERT           = 1 << 6;
+        const HIDE             = 1 << 7;
+        const STRIKE           = 1 << 8;
         const DOUBLE_UNDERLINE = 1 << 9;
-        const OVERLINE = 1 << 10;
+        const OVERLINE         = 1 << 10;
     }
 }
 
@@ -111,13 +120,6 @@ impl Modifiers {
             .iter()
             .filter(move |(flag, _)| self.contains(*flag))
             .map(|&(_, code)| code)
-        // .collect()
-    }
-}
-
-impl Default for Modifiers {
-    fn default() -> Self {
-        Modifiers::empty()
     }
 }
 
@@ -138,16 +140,20 @@ pub enum Tag {
     Reset,
     /// Foreground color.
     Fg(Colour),
+
     /// Background color.
     Bg(Colour),
+
     /// Text modifiers.
     Mdf(Modifiers),
+
     /// Combined shorthand: `<s fg br mbi>...</s>`
     Shorthand {
         fg: Option<Colour>,
         bg: Option<Colour>,
         mdf: Option<Modifiers>,
     },
+
     /// Raw SGR codes: `<! 0 123 255>...</!>`
     /// Emitted verbatim and transparent to the style stack.
     ///
@@ -218,13 +224,14 @@ fn escape<'src>() -> impl Parser<'src, &'src str, String, Err<'src>> + Clone {
 /// Plain text content; use \< to escape a literal <
 fn text_node<'src>() -> impl Parser<'src, &'src str, Node, Err<'src>> + Clone {
     choice((
-        escape(),
-        any().filter(|c: &char| *c != '<').map(|c| c.to_string()),
+        escape(),                       // handle escapes first, like `\<`, `\t` etc
+        none_of('<').map(String::from), // any char except an unescaped `<`
     ))
     .repeated()
     .at_least(1)
-    .collect::<Vec<String>>()
-    .map(|parts| Node::Text(parts.concat()))
+    .collect::<Vec<_>>()
+    .map(|parts| parts.concat())
+    .map(Node::Text)
     .labelled("text")
 }
 
@@ -234,12 +241,11 @@ fn fixed_colour<'src>() -> impl Parser<'src, &'src str, Colour, Err<'src>> + Clo
     byte().map(Colour::Fixed).labelled("fixed color")
 }
 
-fn ansi_clr<'src>(upper: bool) -> impl Parser<'src, &'src str, Clr, Err<'src>> + Clone {
-    let (r, g, b, c, m, y, w, k) = if upper {
-        ('R', 'G', 'B', 'C', 'M', 'Y', 'W', 'K')
-    } else {
-        ('r', 'g', 'b', 'c', 'm', 'y', 'w', 'k')
-    };
+fn ansi_clr<'src>(is_bright: bool) -> impl Parser<'src, &'src str, Clr, Err<'src>> + Clone {
+    let bright = ('R', 'G', 'B', 'C', 'M', 'Y', 'W', 'K');
+    let normal = ('r', 'g', 'b', 'c', 'm', 'y', 'w', 'k');
+
+    let (r, g, b, c, m, y, w, k) = if is_bright { bright } else { normal };
 
     choice((
         just(r).to(Clr::Red),
@@ -254,11 +260,12 @@ fn ansi_clr<'src>(upper: bool) -> impl Parser<'src, &'src str, Clr, Err<'src>> +
 }
 
 fn ansi_colour<'src>() -> impl Parser<'src, &'src str, Colour, Err<'src>> + Clone {
-    choice((
-        ansi_clr(false).map(|clr| Colour::Ansi { clr, bright: false }),
-        ansi_clr(true).map(|clr| Colour::Ansi { clr, bright: true }),
-    ))
-    .labelled("ANSI color")
+    let variant = |bright| ansi_clr(bright).map(move |clr| Colour::Ansi { clr, bright });
+
+    let bright = variant(true);
+    let normal = variant(false);
+
+    choice((bright, normal)).labelled("ANSI color")
 }
 
 /// Decimal R,G,B triple, e.g. 0,128,255
@@ -279,10 +286,10 @@ fn hex_colour<'src>() -> impl Parser<'src, &'src str, Colour, Err<'src>> + Clone
         .labelled("hex digit (0-9, a-f, A-F)");
 
     let digits = choice((
-        hex_digit.repeated().exactly(6).collect(),
-        hex_digit.repeated().exactly(3).collect(),
-        hex_digit.repeated().exactly(2).collect(),
-        hex_digit.repeated().exactly(1).collect(),
+        hex_digit.repeated().exactly(6).collect(), // abcdef
+        hex_digit.repeated().exactly(3).collect(), // abc -> aabbcc
+        hex_digit.repeated().exactly(2).collect(), // ab  -> ababab
+        hex_digit.repeated().exactly(1).collect(), // a   -> aaaaaa
     ));
 
     just('#')
@@ -293,9 +300,9 @@ fn hex_colour<'src>() -> impl Parser<'src, &'src str, Colour, Err<'src>> + Clone
 
 fn expand_hex(s: String) -> Colour {
     let full: String = match s.len() {
-        1 => s.repeat(6),
-        2 => s.repeat(3),
-        3 => s.chars().flat_map(|c| [c, c]).collect(),
+        1 => s.repeat(6),                              // a   -> aaaaaa
+        2 => s.repeat(3),                              // ab  -> ababab
+        3 => s.chars().flat_map(|c| [c, c]).collect(), // abc -> aabbcc
         6 => s,
         _ => unreachable!("hex parser only yields 1/2/3/6 hex digits"),
     };
@@ -369,6 +376,7 @@ pub(crate) fn shorthand<'src>() -> impl Parser<'src, &'src str, Tag, Err<'src>> 
         .collect::<Vec<_>>()
         .map(|tags| {
             let (mut fg, mut bg, mut mdf) = (None, None, None);
+
             for tag in tags {
                 match tag {
                     Fg(c) => fg = Some(c),
@@ -377,6 +385,7 @@ pub(crate) fn shorthand<'src>() -> impl Parser<'src, &'src str, Tag, Err<'src>> 
                     _ => unreachable!(),
                 }
             }
+
             Shorthand { fg, bg, mdf }
         })
         .labelled("shorthand")
@@ -421,7 +430,7 @@ pub fn node<'src>() -> impl Parser<'src, &'src str, Node, Err<'src>> + Clone {
             .labelled("reset");
 
         let raw = just("<!")
-            .ignore_then(any().filter(|c| *c != '>').repeated().collect())
+            .ignore_then(none_of('>').repeated().collect())
             .then_ignore(just('>').labelled("closing `>`"))
             .then(content.clone())
             .then_ignore(just("</!>").labelled("closing raw tag"))
@@ -464,9 +473,12 @@ impl Document {
     ///
     /// Panics if the input contains invalid AML markup. Prefer [`Document::try_new`]
     /// for fallible parsing.
-    #[deprecated(since = "0.1.1", note = "use Document::try_new instead; this panics on invalid input")]
+    #[deprecated(
+        since = "0.1.1",
+        note = "use Document::try_new instead; this panics on invalid input"
+    )]
     pub fn new(input: &str) -> Self {
-        Document::try_new(input).unwrap()
+        Document::try_new(input).expect("This is not a valid AML document")
     }
 
     /// Parse input, returning errors instead of panicking.

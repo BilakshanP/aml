@@ -1,6 +1,3 @@
-#[cfg(test)]
-mod tests;
-
 pub mod parser;
 pub mod render;
 
@@ -16,3 +13,6 @@ pub mod prelude {
     #[cfg(feature = "diagnostics")]
     pub use crate::diagnostics::report;
 }
+
+#[cfg(test)]
+mod tests;

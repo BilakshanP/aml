@@ -2,7 +2,7 @@ use std::io::Read;
 
 use clap::{Args, Parser};
 
-/// ANSI Markup Language renderer.
+/// ANSI Markup Language's CLI.
 #[derive(Parser)]
 #[command(name = "aml", version, about, long_about = None)]
 pub struct Cli {

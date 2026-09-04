@@ -41,6 +41,7 @@ pub fn style(input: TokenStream) -> TokenStream {
             let compiled = style.compile();
             quote! { #compiled }.into()
         }
+
         Err(errs) => {
             let errors = errs.iter().map(|err| {
                 Error::new(Span::call_site(), err.reason().to_string()).to_compile_error()

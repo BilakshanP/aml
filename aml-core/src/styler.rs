@@ -75,7 +75,10 @@ impl Style {
     /// let styled = Style::paint_str("fr mbi", "Hello").unwrap();
     /// assert!(styled.contains("Hello"));
     /// ```
-    pub fn paint_str<'src>(spec: &'src str, text: &'src str) -> Result<String, Vec<Rich<'src, char>>> {
+    pub fn paint_str<'src>(
+        spec: &'src str,
+        text: &'src str,
+    ) -> Result<String, Vec<Rich<'src, char>>> {
         Ok(Style::new(spec)?.paint(text))
     }
 
@@ -90,7 +93,10 @@ impl Style {
     }
 
     /// Deprecated: use [`Style::paint_str`] instead.
-    #[deprecated(since = "0.1.1", note = "use Style::paint_str instead, Style::apply leaks memory")]
+    #[deprecated(
+        since = "0.1.1",
+        note = "use Style::paint_str instead, Style::apply leaks memory"
+    )]
     pub fn apply<'src>(spec: &'src str, text: &'src str) -> Result<String, Vec<Rich<'src, char>>> {
         Style::paint_str(spec, text)
     }
