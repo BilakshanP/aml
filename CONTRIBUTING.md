@@ -38,10 +38,24 @@ git config core.hooksPath .githooks
 This is preferred over copying or symlinking into `.git/hooks`, because the hooks
 stay tracked in the repository and update with `git pull`.
 
+### `pre-commit`
+
+Runs `cargo check --workspace --all-features` — a fast compile check (no tests)
+so mistakes are caught before a commit is recorded without slowing commits down.
+To bypass in an emergency (avoid as a habit):
+
+```bash
+git commit --no-verify
+```
+
 ### `pre-push`
 
-Runs `cargo test --workspace --all-features` before every push and aborts the
-push if any test fails. To bypass it in an emergency (avoid as a habit):
+Runs the heavier gates that mirror CI before every push, aborting if either fails:
+
+1. `cargo fmt --all --check` — formatting must be clean.
+2. `cargo test --workspace --all-features` — the full test suite must pass.
+
+To bypass in an emergency (avoid as a habit):
 
 ```bash
 git push --no-verify
