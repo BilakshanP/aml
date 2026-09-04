@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# Pre-commit hook: fast compile check before recording a commit. Runs
+# `cargo check` only (no tests) to keep commits quick; the heavier fmt + test
+# gates run at push time (see .githooks/pre-push). Enable it once per clone with:
+#
+#     git config core.hooksPath .githooks
+#
+# To bypass in an emergency: `git commit --no-verify` (avoid as a habit).
+
+set -eu
+
+echo "pre-commit: checking the workspace compiles (cargo check --workspace --all-features) ..."
+if ! cargo check --workspace --all-features; then
+    echo "pre-commit: cargo check failed — commit aborted." >&2
+    exit 1
+fi
+
+echo "pre-commit: workspace compiles."

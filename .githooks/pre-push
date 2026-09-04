@@ -1,7 +1,8 @@
 #!/bin/sh
 #
-# Pre-push hook: run the full workspace test suite with all features before
-# allowing a push. Enable it once per clone with:
+# Pre-push hook: verify formatting and run the full workspace test suite with
+# all features before allowing a push. Mirrors the CI gates so failures surface
+# locally instead of on the pipeline. Enable it once per clone with:
 #
 #     git config core.hooksPath .githooks
 #
@@ -9,11 +10,16 @@
 
 set -eu
 
-echo "pre-push: running cargo test --workspace --all-features ..."
+echo "pre-push: checking formatting (cargo fmt --all --check) ..."
+if ! cargo fmt --all --check; then
+    echo "pre-push: formatting check failed — run 'cargo fmt --all', then push again." >&2
+    exit 1
+fi
 
+echo "pre-push: running tests (cargo test --workspace --all-features) ..."
 if ! cargo test --workspace --all-features; then
     echo "pre-push: tests failed — push aborted." >&2
     exit 1
 fi
 
-echo "pre-push: all tests passed."
+echo "pre-push: formatting and tests passed."
