@@ -1,4 +1,5 @@
 use aml_core::parser::Document;
+#[cfg(feature = "styler")]
 use aml_core::styler::Style;
 
 // ── Parser error paths ────────────────────────────────────────────────────
@@ -96,21 +97,25 @@ fn plain_text_only_parses_ok() {
 
 // ── Styler error paths ────────────────────────────────────────────────────
 
+#[cfg(feature = "styler")]
 #[test]
 fn empty_style_spec_returns_error() {
     assert!(Style::new("").is_err());
 }
 
+#[cfg(feature = "styler")]
 #[test]
 fn invalid_style_spec_returns_error() {
     assert!(Style::new("xyz").is_err());
 }
 
+#[cfg(feature = "styler")]
 #[test]
 fn style_with_invalid_color_returns_error() {
     assert!(Style::new("fz").is_err());
 }
 
+#[cfg(feature = "styler")]
 #[test]
 fn paint_str_with_invalid_spec_returns_error() {
     assert!(Style::paint_str("invalid", "text").is_err());
@@ -118,6 +123,7 @@ fn paint_str_with_invalid_spec_returns_error() {
 
 // ── Styler success paths ──────────────────────────────────────────────────
 
+#[cfg(feature = "styler")]
 #[test]
 fn valid_style_paint_contains_text() {
     let s = Style::new("fr mbi").unwrap();
@@ -126,6 +132,7 @@ fn valid_style_paint_contains_text() {
     assert!(result.ends_with("\x1b[0m"));
 }
 
+#[cfg(feature = "styler")]
 #[test]
 fn paint_str_valid_spec_works() {
     let result = Style::paint_str("fr", "test").unwrap();

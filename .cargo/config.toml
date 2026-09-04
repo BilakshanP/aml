@@ -1,0 +1,5 @@
+[alias]
+# Run the whole workspace's tests with every feature enabled, so feature-gated
+# tests (e.g. `styler`, `quote`) always compile and run. Plain `cargo test` only
+# exercises whatever the default feature graph happens to unify on.
+t = "test --all-features"
